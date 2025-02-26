@@ -13,6 +13,19 @@ const userRoutes = require("./routes/userRoutes")
 const productRoutes = require("./routes/productRoutes")
 const cartRoutes = require("./routes/cartRoutes")
 
+const orderRoutes = require("./routes/orderRoutes")
+const issueRoutes = require("./routes/issueRoutes") // New import for issues
+const reviewRoutes = require("./routes/reviewRoutes")
+
+const resetPasswordRoutes = require("./routes/userRoutes")
+const forgotPasswordRoutes = require("./routes/userRoutes")
+const changePasswordRoutes = require("./routes/userRoutes")
+
+const updatePaymentStatus = require("./routes/orderRoutes")
+const updateOrderStatus = require("./routes/orderRoutes")
+
+const uploadRoutes = require("./controllers/routeUpload")
+
 var app = express();
 
 // ✅ Connect to Database
@@ -34,6 +47,20 @@ app.use('/users', usersRouter);
 app.use("/api/users", userRoutes)
 app.use("/api/products", productRoutes)
 app.use("/api/cart", cartRoutes)
+app.use("/api/orders", orderRoutes)
+app.use("/api/upload", uploadRoutes)
+app.use("/api/issues", issueRoutes) // New route for issues
+app.use('/api/review',reviewRoutes)
+
+app.use("/api/reset-password", resetPasswordRoutes)
+app.use("/api/forgot-password", forgotPasswordRoutes)
+app.use("/api/change-password", changePasswordRoutes)
+
+app.use("/api/updateOrderStatus", updateOrderStatus)
+app.use("/api/updatePayment", updatePaymentStatus)
+
+app.use('/api/userProfileDetail', userRoutes)
+app.use('/api/updateUserProfileDetail', userRoutes)
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
