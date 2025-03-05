@@ -1,3 +1,612 @@
+// const Order = require("../models/Order");
+// const Cart = require("../models/Cart");
+// const Product = require('../models/Product')
+// require("dotenv").config(); // Load .env file
+// const User = require("../models/User");
+// const sendOrderConfirmationEmail = require("./mailer");
+// const mongoose = require('mongoose')
+
+// const currency = "inr";
+// const deliveryCharge = 10;
+
+// const createOrder = async (req, res) => {
+//   try {
+//     console.log("Request received:", req.body); // Log the incoming request body
+//     const { items, totalAmount, paymentMethod, address, paymentIntentId } =
+//       req.body;
+
+//     if (!items || !items.length || !totalAmount || !paymentMethod || !address) {
+//       return res
+//         .status(400)
+//         .json({ message: "Missing required fields in the order" });
+//     }
+
+//     const finalAmount = totalAmount + deliveryCharge;
+
+//     let paymentIntent;
+
+//     // Handle payment based on payment method
+//     if (paymentMethod === "card") {
+//       if (!paymentIntentId) {
+//         // Create a new payment intent if one is not provided
+//         paymentIntent = await stripe.paymentIntents.create({
+//           amount: finalAmount * 100, // Convert to smallest currency unit (e.g., paise for INR)
+//           currency,
+//           payment_method_types: ["card"],
+//         });
+//       } else {
+//         // Retrieve existing payment intent
+//         paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+//       }
+
+//       if (!paymentIntent) {
+//         return res
+//           .status(500)
+//           .json({ message: "Unable to process payment with Stripe" });
+//       }
+//     }
+
+//     const order = await Order.create({
+//       user: req.user.id,
+//       items,
+//       totalAmount: finalAmount,
+//       paymentMethod,
+//       paymentIntentId: paymentIntent ? paymentIntent.id : null,
+//       status: paymentMethod === "card" ? "Pending Payment" : "Processing",
+//       address,
+//     });
+
+//     res
+//       .status(201)
+//       .json({
+//         order,
+//         clientSecret: paymentIntent ? paymentIntent.client_secret : null,
+//         message: "Order created successfully",
+//       });
+//   } catch (error) {
+//     console.error("Error in createOrder:", error.message); // Log errors
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
+// // Other methods remain unchanged
+// const getOrderById = async (req, res) => {
+//   try {
+//     const order = await Order.findById(req.params.id).populate("items.product");
+//     if (!order) {
+//       return res.status(404).json({ message: "Order not found" });
+//     }
+
+//     if (order.user.toString() !== req.user.id) {
+//       return res
+//         .status(403)
+//         .json({ message: "Unauthorized access to the order" });
+//     }
+
+//     res.status(200).json(order);
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
+// const getMyOrders = async (req, res) => {
+//   try {
+//     const orders = await Order.find({ userId: req.user._id });
+//     res.status(200).json(orders);
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
+// const getAllOrders = async (req, res) => {
+//   try {
+//     const orders = await Order.find().populate("userId", "name email"); // Populate userId to get name and email
+//     res.status(200).json(orders);
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
+// const placeOrder = async (req, res) => {
+//   try {
+//     const { items, totalAmount, address, paymentMethod } = req.body;
+//     const userId = req.user?._id;
+
+//     // Validate required fields
+//     if (
+//       !userId ||
+//       !items ||
+//       !Array.isArray(items) ||
+//       items.length === 0 ||
+//       !totalAmount ||
+//       !address ||
+//       !paymentMethod
+//     ) {
+//       return res
+//         .status(400)
+//         .json({
+//           success: false,
+//           message:
+//             "All fields are required and items must be a non-empty array.",
+//         });
+//     }
+
+//     // Fetch user details
+//     const user = await User.findById(userId);
+//     if (!user) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "User not found" });
+//     }
+
+//     // Create a new order
+//     const newOrder = new Order({
+//       userId,
+//       items,
+//       totalAmount,
+//       address,
+//       paymentMethod,
+//       payment: false,
+//       date: new Date(),
+//     });
+
+//     // Save order to database
+//     await newOrder.save();
+
+//     // Send confirmation email with corrected item properties
+//     await sendOrderConfirmationEmail(
+//       user.email,
+//       items.map((item) => ({
+//         name: item.productName,
+//         quantity: item.quantity,
+//         price: item.price,
+//       })),
+//       totalAmount,
+//       address // Add this line
+//     );
+
+//     res.status(201).json({
+//       success: true,
+//       message: "Order placed successfully",
+//       order: newOrder,
+//       userEmail: user.email, // Ensure frontend gets the email
+//     });
+//   } catch (error) {
+//     console.error(" Order placement error:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Internal Server Error",
+//       error: error.message,
+//     });
+//   }
+// };
+
+// const userOrders = async (req, res) => {
+//   try {
+//     const { userId } = req.body;
+
+//     const orders = await Order.find({ userId });
+//     res.json({ success: true, orders });
+//   } catch (error) {
+//     console.log(error);
+//     res.json({ success: false, message: error.message });
+//   }
+// };
+
+// const placeOrderStripe = async (req, res) => {
+//   res.status(501).json({ message: "Stripe payment not implemented yet" });
+// };
+
+// const placeOrderRazorpay = async (req, res) => {
+//   res.status(501).json({ message: "Razorpay payment not implemented yet" });
+// };
+
+// const updateOrderStatus = async (req, res) => {
+//   try {
+//     const { _id, status, tentativeDeliveryDate } = req.body;
+
+//     // Prepare the update object
+//     const updateData = { status };
+
+//     // Only add tentativeDeliveryDate to the update if it's provided
+//     if (tentativeDeliveryDate) {
+//       updateData.tentativeDeliveryDate = new Date(tentativeDeliveryDate);
+//     }
+
+//     const updatedOrder = await Order.findByIdAndUpdate(
+//       _id,
+//       updateData,
+//       { new: true } // This option returns the updated document
+//     );
+
+//     if (!updatedOrder) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "Order not found" });
+//     }
+
+//     res.json({ success: true, message: "Order Updated", order: updatedOrder });
+//   } catch (error) {
+//     console.error("Error updating order:", error);
+//     res.status(500).json({ success: false, message: error.message });
+//   }
+// };
+
+// const updatePaymentStatus = async (req, res) => {
+//   try {
+//     const { _id, payment } = req.body;
+
+//     await Order.findByIdAndUpdate(_id, { payment });
+//     res.json({ success: true, message: "Status Updated" });
+//   } catch (error) {
+//     console.log(error);
+//     res.json({ success: false, message: error.message });
+//   }
+// };
+
+// // return order ----------
+// const updateReturnAction = async (req, res) => {
+//   try {
+//     const { _id, productId } = req.params; // Extract order ID and product ID from URL params
+//     console.log("Order ID:----------->", _id);
+//     console.log("Product ID:", productId);
+//     const { action } = req.body; // Extract action from request body
+
+//     if (!action) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "Action is required" });
+//     }
+//     const specifyStatus = action === "accepted" ? true : false;
+
+//     const order = await Order.findOneAndUpdate(
+//       { _id, "items.productId": productId }, // Find the order and specific product
+//       {
+//         $set: {
+//           "items.$.action": action,
+//           "items.$.returnApproved": specifyStatus,
+//         },
+//       }, // Update only the specific product's action
+//       { new: true }
+//     );
+
+//     if (!order) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "Order or Product not found" });
+//     }
+
+//     res.json({ success: true, message: "Action Updated", order });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ success: false, message: error.message });
+//   }
+// };
+
+// const returnProduct = async (req, res) => {
+//   try {
+//     const { orderId, productId } = req.params;
+
+//     const order = await Order.findOne({ _id: orderId });
+//     console.log(orderId);
+//     console.log(productId);
+//     console.log(req.user._id.toString());
+
+//     if (!order) {
+//       return res.status(404).json({ message: "Order not found" });
+//     }
+
+//     const itemIndex = order.items.findIndex(
+//       (item) => item.productId.toString() === productId
+//     );
+//     if (itemIndex === -1) {
+//       return res.status(404).json({ message: "Product not found in order" });
+//     }
+
+//     const item = order.items[itemIndex];
+//     if (item.returnRequested) {
+//       return res
+//         .status(400)
+//         .json({ message: "Return already requested for this product" });
+//     }
+
+//     item.returnRequested = true;
+//     await order.save();
+
+//     res.status(200).json({ message: "Return request submitted successfully" });
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
+// const saveReturnReason = async (req, res) => {
+//   try {
+//     const { orderId, productId, reason } = req.body;
+
+//     if (!orderId || !productId || !reason) {
+//       return res
+//         .status(400)
+//         .json({ message: "OrderId, ProductId, and Reason are required" });
+//     }
+
+//     const order = await Order.findById(orderId);
+//     if (!order) {
+//       return res.status(404).json({ message: "Order not found" });
+//     }
+
+//     const item = order.items.find(
+//       (item) => item.productId.toString() === productId
+//     );
+//     if (!item) {
+//       return res
+//         .status(404)
+//         .json({ message: "Product not found in the order" });
+//     }
+
+//     item.returnReason = reason;
+//     item.returnRequested = true;
+
+//     await order.save();
+
+//     res
+//       .status(200)
+//       .json({ message: "Return reason saved successfully", data: order });
+//   } catch (error) {
+//     res
+//       .status(500)
+//       .json({ message: "Error saving return reason", error: error.message });
+//   }
+// };
+
+
+// const getReturnOrder = async (req, res) => {
+//   try {
+//     // Fetch orders where returnRequested is true in items
+//     const orders = await Order.find({ "items.returnRequested": true })
+//       .populate("userId", "firstName lastName email")
+//       .populate("items.productId", "name")
+
+//     // If no orders found
+//     if (!orders.length) {
+//       return res.status(404).json({ message: "No return requests found" })
+//     }
+
+//     // Format the fetched orders
+//     const formattedOrders = orders.flatMap((order) =>
+//       order.items
+//         .filter((item) => item.returnRequested)
+//         .map((returnItem) => {
+//           const productName = returnItem.productId ? returnItem.productId.name : "Unknown Product"
+
+//           return {
+//             _id: order._id,
+//             productName: productName,
+//             productId: returnItem.productId ? returnItem.productId._id : null,
+//             firstName: order.userId ? order.userId.firstName : "Unknown",
+//             lastName: order.userId ? order.userId.lastName : "Unknown",
+//             email: order.userId ? order.userId.email : "Unknown",
+//             street: order.address ? order.address.street : "Unknown",
+//             landmark: order.address ? order.address.landmark : "Unknown",
+//             city: order.address ? order.address.city : "Unknown",
+//             zipcode: order.address ? order.address.zipcode : "Unknown",
+//             country: order.address ? order.address.country : "Unknown",
+//             state: order.address ? order.address.state : "Unknown",
+//             phone: order.address ? order.address.phone : "Unknown",
+//             totalAmount: order.totalAmount,
+//             paymentMethod: order.paymentMethod,
+//             returnReason: returnItem.returnReason || "N/A",
+//             status: returnItem.returnApproved ? "Return Approved" : "Return Requested",
+//           }
+//         }),
+//     )
+
+//     res.status(200).json(formattedOrders)
+//   } catch (error) {
+//     console.error("Error in getReturnOrder:", error)
+//     res.status(500).json({ message: "Server error", error: error.message })
+//   }
+// }
+// const updateReturnStatus = async (req, res) => {
+//   try {
+//     const { orderId, productId } = req.params;
+//     const { action } = req.body;
+
+//     console.log("Received orderId:", orderId);
+//     console.log("Received productId:", productId);
+//     console.log("Received action:", action);
+
+//     // Check if orderId is a valid ObjectId
+//     if (!mongoose.Types.ObjectId.isValid(orderId)) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "Invalid orderId format" });
+//     }
+
+//     // Find the order by orderId
+//     const order = await Order.findById(orderId);
+//     console.log("Order fetched:", order);
+
+//     if (!order) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "Order not found" });
+//     }
+
+//     // Find the specific product in the order's items array
+//     const itemIndex = order.items.findIndex(
+//       (item) => item.productId.toString() === productId
+//     );
+//     console.log("🔹 Item index:", itemIndex);
+
+//     if (itemIndex === -1) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "Product not found in order" });
+//     }
+
+//     // Update the action field
+//     order.items[itemIndex].action = action;
+
+//     // Save the updated order
+//     await order.save();
+
+//     res
+//       .status(200)
+//       .json({ success: true, message: "Action updated successfully", order });
+//   } catch (error) {
+//     console.error(" Error updating return status:", error);
+//     res.status(500).json({ success: false, message: error.message });
+//   }
+// };
+
+// // controller.js or wherever your logic resides
+
+// // const updateItemStatus = async (req, res) => {
+// //   try {
+
+// //     const { productId } = req.params; // Product ID passed in URL parameter
+// //     const { action } = req.body; // Action passed in the body (either "block" or "active")
+// //     const status = action === "block" ? "unblock" : "active"; // Determine status based on action
+
+// //     console.log(`Received productId: ${productId}, Action: ${action}`);
+
+// //     // Try finding the order with productId as string (no ObjectId conversion needed)
+// //     // const order = await Order.findOne({ "items.productId": productId }); // Query with productId as string
+// //     // const order = await Product.findById(productId)
+// //     // console.log("Found order with string productId?", order);
+
+// //     // if (!order) {
+// //     //   console.log("Order or Item not found.");
+// //     //   return res.status(404).json({ success: false, message: "Order or Item not found" });
+// //     // }
+
+// //     // Find the order and update the item status using the string productId
+// //     const updatedOrder = await Order.findOneAndUpdate(
+// //       // { "items.productId": productId }, // Use string comparison for productId
+// //       { "_id":productId},
+// //       { 
+// //         $set: { 
+// //           "items.$[elem].status": status, // Update the status
+// //           "items.$[elem].action": status === "block" ? "block" : "unblock" // Update the action based on status
+// //         } 
+// //       },
+// //       {
+// //         arrayFilters: [
+// //           { "elem.productId": productId }
+// //         ]
+// //       },
+// //       { new: true } // Return the updated order document
+// //     );
+
+// //     console.log("Updated Order:", updatedOrder);
+
+// //     // If no order was updated, return an error
+// //     if (!updatedOrder) {
+// //       return res.status(404).json({ success: false, message: "Order or Item not found" });
+// //     }
+
+// //     // Return the updated order in the response
+// //     return res.json({ success: true, message: "Item status updated successfully", order: updatedOrder });
+// //   } catch (error) {
+// //     console.error("Error updating item status:", error);
+// //     return res.status(500).json({ success: false, message: error.message });
+// //   }
+// // };
+
+// // const updateItemStatus = async (req, res) => {
+// //   try {
+// //     const { productId } = req.params; // Product ID passed in URL
+// //     const { action } = req.body; // Status passed in request body
+// //     const status = action === "block" ? "active" : "block"; // Determine status based on action
+
+// //     console.log(`Received productId: ${productId}, New Status: ${status}`);
+
+// //     // Find and update the specific product inside 'items' array
+// //     const updatedOrder = await Order.findOneAndUpdate(
+// //       { "items.$[elm].productId": productId }, // Find order containing the product
+// //       {
+// //         $set: { 
+// //           "items.$[elm].status": status // Update only the matched product's status
+// //         }
+// //       },
+// //       {
+// //         arrayFilters: [{ "elem.productId": productId }], // Ensure only the correct product updates
+// //         new: true // Return the updated order
+// //       }
+// //     );
+
+// //     // If no order was found or updated
+// //     if (!updatedOrder) {
+// //       return res.status(404).json({ success: false, message: "Order or Item not found" });
+// //     }
+
+// //     console.log("Updated Order:", updatedOrder);
+// //     return res.json({ success: true, message: "Item status updated successfully", order: updatedOrder });
+
+// //   } catch (error) {
+// //     console.error("Error updating item status:", error);
+// //     return res.status(500).json({ success: false, message: error.message });
+// //   }
+// // };
+
+
+// const updateItemStatus = async (req, res) => {
+//   try {
+//     const { productId, action } = req.body;
+//     const status = action === 'active' ? 'block' : 'active';
+
+//     console.log(status)
+
+//     if (!productId || !action) {
+//       res.json({ message: "Not provided the data" })
+//     }
+
+//     // await Order.findOneAndUpdate(
+//     //   { "items.productId": productObjectId }, {
+//     //   $set: {
+//     //     "items.$[elem].status": status
+//     //   }
+//     // }, {
+//     //   arrayFilters: [{ "elem.productId": productObjectId }], // Ensure we only update the correct product
+//     //   new: true // Return the updated document
+//     // }
+//     // )
+//     // await Order.findOneAndUpdate({ "items.productId": productId }, { $set: { "items.status": status } })
+//    await User.findByIdAndUpdate(productId ,status )
+//    const updateUser = await User.find({"_id":productId})
+
+//     res.status(200).json({ message: "Updated Successfully", Data: res })
+
+//   } catch (error) {
+//     res.status(500).json({ message: error.message })
+//   }
+// }
+
+// module.exports = {
+//   createOrder,
+//   getOrderById,
+//   getMyOrders,
+//   getAllOrders,
+//   placeOrder,
+//   placeOrderStripe,
+//   placeOrderRazorpay,
+//   updatePaymentStatus,
+//   updateOrderStatus,
+//   userOrders,
+//   updateReturnAction,
+//   returnProduct,
+//   saveReturnReason,
+//   getReturnOrder,
+//   updateReturnStatus,
+//   updateItemStatus,
+// };
+
+
+
+
+
+
+
 const Order = require("../models/Order");
 const Cart = require("../models/Cart");
 require("dotenv").config(); // Load .env file
@@ -470,7 +1079,7 @@ const updateItemStatus = async (req, res) => {
 
     // Try finding the order with productId as string (no ObjectId conversion needed)
     const order = await Order.findOne({ "items.productId": productId }); // Query with productId as string
-    console.log("Found order with string productId?", order);
+    console.log("Found order with string productId?", !!order);
 
     if (!order) {
       console.log("Order or Item not found.");

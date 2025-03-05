@@ -24,6 +24,9 @@ const userSchema = new mongoose.Schema(
       required: true,
       length: 10,
     },
+    status:{
+      type:String
+    },
     street: {
       type: String,
       required: true,
