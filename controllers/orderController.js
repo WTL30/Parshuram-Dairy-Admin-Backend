@@ -3,6 +3,7 @@ const Cart = require("../models/Cart");
 require("dotenv").config(); // Load .env file
 const User = require("../models/User");
 const sendOrderConfirmationEmail = require("./mailer");
+const mongoose = require('mongoose')
 
 const currency = "inr";
 const deliveryCharge = 10;
@@ -457,7 +458,53 @@ const updateReturnStatus = async (req, res) => {
   }
 };
 
-module.exports = {
+// controller.js or wherever your logic resides
+
+const updateItemStatus = async (req, res) => {
+  try {
+    const { productId } = req.params; // Product ID passed in URL parameter
+    const { action } = req.body; // Action passed in the body (either "block" or "active")
+    const status = action === "block" ? "block" : "active"; // Determine status based on action
+
+    console.log(`Received productId: ${productId}, Action: ${action}`);
+
+    // Try finding the order with productId as string (no ObjectId conversion needed)
+    const order = await Order.findOne({ "items.productId": productId }); // Query with productId as string
+    console.log("Found order with string productId?", order);
+
+    if (!order) {
+      console.log("Order or Item not found.");
+      return res.status(404).json({ success: false, message: "Order or Item not found" });
+    }
+
+    // Find the order and update the item status using the string productId
+    const updatedOrder = await Order.findOneAndUpdate(
+      { "items.productId": productId }, // Use string comparison for productId
+      { 
+        $set: { 
+          "items.$.status": status, // Update the status
+          "items.$.action": status === "block" ? "block" : "unblock" // Update the action based on status
+        } 
+      },
+      { new: true } // Return the updated order document
+    );
+
+    console.log("Updated Order:", updatedOrder);
+
+    // If no order was updated, return an error
+    if (!updatedOrder) {
+      return res.status(404).json({ success: false, message: "Order or Item not found" });
+    }
+
+    // Return the updated order in the response
+    return res.json({ success: true, message: "Item status updated successfully", order: updatedOrder });
+  } catch (error) {
+    console.error("Error updating item status:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+ module.exports = {
   createOrder,
   getOrderById,
   getMyOrders,
@@ -473,4 +520,5 @@ module.exports = {
   saveReturnReason,
   getReturnOrder,
   updateReturnStatus,
+  updateItemStatus,
 };

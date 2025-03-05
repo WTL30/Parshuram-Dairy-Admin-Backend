@@ -5,6 +5,7 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 require("dotenv").config();
 var connectDB = require("./config/db"); // ✅ Import connectDB
+const cors = require('cors')
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -24,17 +25,28 @@ const changePasswordRoutes = require("./routes/userRoutes")
 const updatePaymentStatus = require("./routes/orderRoutes")
 const updateOrderStatus = require("./routes/orderRoutes")
 
-const uploadRoutes = require("./controllers/routeUpload")
+const manageAdmin = require("./routes/adminManagerRoutes")
+
+// const uploadRoutes = require("./controllers/routeUpload")
+const stockRoutes = require("./routes/stockRoutes");
+const uploadImage = require("./routes/uploadRoute")
 
 var app = express();
 
 // ✅ Connect to Database
 connectDB();
 
+app.use(express.static('public'));
+
+
+
+
+
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
 
+app.use(cors())
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -48,7 +60,7 @@ app.use("/api/users", userRoutes)
 app.use("/api/products", productRoutes)
 app.use("/api/cart", cartRoutes)
 app.use("/api/orders", orderRoutes)
-app.use("/api/upload", uploadRoutes)
+// app.use("/api/upload", uploadRoutes)
 app.use("/api/issues", issueRoutes) // New route for issues
 app.use('/api/review',reviewRoutes)
 
@@ -61,7 +73,9 @@ app.use("/api/updatePayment", updatePaymentStatus)
 
 app.use('/api/userProfileDetail', userRoutes)
 app.use('/api/updateUserProfileDetail', userRoutes)
-
+app.use('/api/admin-manage', manageAdmin)
+app.use("/api/stocks", stockRoutes);
+app.use("/api/upload", uploadImage);
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));

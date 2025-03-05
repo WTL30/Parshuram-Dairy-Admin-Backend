@@ -52,9 +52,9 @@ const createProduct = async (req, res) => {
       category,
       subcategory,
       availableStock,
-      images,
-      availableSizes,
-      availableColors,
+      images
+      // availableSizes,
+      // availableColors,
     } = req.body;
 
     // Convert category and subcategory to arrays if they are strings

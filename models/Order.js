@@ -10,7 +10,8 @@ const orderSchema = new mongoose.Schema(
           ref: "Product",
           required: true,
         },
-        action: { type: String, default: "Select" },  // Action specific to the product
+        action: { type: String, enum: ["block", "unblock"], default: "unblock" }, // ✅ Added action field
+        status: { type: String, enum: ["active", "block"], default: "active" }, // ✅ Status inside items
         quantity: { type: Number, required: true },
         size: { type: String, required: true },
         returnRequested: { type: Boolean, default: false },
@@ -21,7 +22,7 @@ const orderSchema = new mongoose.Schema(
     totalAmount: { type: Number, required: true },
     paymentMethod: { type: String, required: false, enum: ["Credit Card", "Debit Card", "PayPal", "Cash on Delivery"] },
     address: { type: Object, required: true },
-    status: { type: String, default: "Pending" },
+    status: { type: String, enum: ["Shipping","Pending","Delivered","Cancelled","Processing",'Confirmed'], default: " " },
     payment: { type: Boolean, required: false, default: false },
     date: { type: Date, default: Date.now },
     tentativeDeliveryDate: { type: Date, required: false }, // New field added

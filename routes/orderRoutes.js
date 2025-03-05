@@ -15,6 +15,7 @@ const {
   saveReturnReason,
   // updateReturnStatus,
   updateReturnAction,
+  updateItemStatus
 } = require("../controllers/orderController");
 
 const router = express.Router();
@@ -69,5 +70,7 @@ router.get("/return-orders", protect, getReturnOrder);
 router.post("/save-reason", protect, saveReturnReason);
 
 router.post("/update-return-status/:_id/:productId", updateReturnAction);
+
+router.put("/update-item-status/:productId",updateItemStatus);
 
 module.exports = router;
