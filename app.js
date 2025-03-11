@@ -11,7 +11,7 @@ var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 
 const userRoutes = require("./routes/userRoutes")
-const productRoutes = require("./routes/productRoutes")
+// const productRoutes = require("./routes/productRoutes")
 const cartRoutes = require("./routes/cartRoutes")
 
 const orderRoutes = require("./routes/orderRoutes")
@@ -57,7 +57,7 @@ app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
 app.use("/api/users", userRoutes)
-app.use("/api/products", productRoutes)
+// app.use("/api/products", productRoutes)
 app.use("/api/cart", cartRoutes)
 app.use("/api/orders", orderRoutes)
 // app.use("/api/upload", uploadRoutes)

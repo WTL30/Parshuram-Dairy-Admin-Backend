@@ -10,7 +10,7 @@ const {
 const { protect } = require('../middleware/authMiddleware');
 
 // Protected routes
-router.post('/add', protect, addItemToCart);
+router.post('/add', addItemToCart);
 router.get('/', protect, getUserCart);
 router.post('/remove', protect, removeItemFromCart);
 router.post('/update', protect, updateItemQuantity);

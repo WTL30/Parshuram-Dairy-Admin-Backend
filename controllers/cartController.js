@@ -235,33 +235,81 @@ const User = require("../models/User");
 //   }
 // };
 
-const addItemToCart = async (req,res) => {
+// const addItemToCart = async (req,res) => {
+//   try {
+//     // const {productId,userId} = req.params;
+//     const {productId,userId,quantity} = req.body;
+
+//     const cart = await Cart.findOne({userId});
+    
+//     if(!cart){
+//       // res.status(400).json({message:"Not Found"})
+//       cart = new Cart({userId,items:[]})
+//     }
+    
+//     const existingItem  = cart.items.find(item => item.productId.toString() === productId)
+
+//     if(existingItem){
+//       existingItem.quantity += quantity
+//     }
+//     else{
+//       cart.items.push({productId,quantity})
+//     }
+    
+//     // cart.totalPrice = cart.items.reduce((total,item) => total + (item.))
+//     res.status(200).json({data:cart})
+//   } catch (error) {
+//     res.status(400).json({message:"Not Found"})
+//   }
+// }
+
+const addItemToCart = async (req, res) => {
   try {
-    // const {productId,userId} = req.params;
-    const {productId,userId,quantity,} = req.body;
+    console.log(req.body);
+    
+    const { productId, userId, quantity = 1} = req.body;
+    // const userId = req.user._id;
 
-    const cart = await Cart.findOne({userId});
-    
-    if(!cart){
-      // res.status(400).json({message:"Not Found"})
-      cart = new Cart({userId,items:[]})
+    // Validate productId and quantity
+    if (!mongoose.Types.ObjectId.isValid(productId) || quantity < 1) {
+      return res.status(400).json({ message: 'Invalid product ID or quantity' });
     }
-    
-    const existingItem  = cart.items.find(item => item.productId.toString() === productId)
 
-    if(existingItem){
-      existingItem.quantity += quantity
+    // Check if product exists
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
     }
-    else{
-      cart.items.push({productId,quantity})
+
+    // Find the user to get the userName
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
-    
-    // cart.totalPrice = cart.items.reduce((total,item) => total + (item.))
-    res.status(200).json({data:cart})
+
+    // Find or create cart
+    let cart = await Cart.findOneAndUpdate(
+      { userId },
+      { $set: { userName: user.name } }, // Update userName if it has changed
+      { new: true, upsert: true, setDefaultsOnInsert: true }
+    );
+
+    // Check if the product already exists in the cart
+    const productExists = cart.items.find(
+      (item) => item.productId.equals(productId)
+    );
+    if (productExists) {
+      productExists.quantity += quantity; // Increment quantity
+    } else {
+      cart.items.push({ productId: productId, size,color, quantity }); // Add new item with quantity
+    }
+
+    await cart.save();
+    res.status(201).json({ message: 'Item added to cart', cart });
   } catch (error) {
-    res.status(400).json({message:"Not Found"})
+    res.status(500).json({ message: 'Error adding item to cart', error: error.message });
   }
-}
+};
 // Rest of the controller methods remain the same
 const getUserCart = async (req, res) => {
   try {
@@ -291,24 +339,59 @@ const getUserCart = async (req, res) => {
   }
 };
 
+// const removeItemFromCart = async (req, res) => {
+//   try {
+//     const { productId, size } = req.body;
+
+//     // Validate the productId
+//     if (!mongoose.Types.ObjectId.isValid(productId)) {
+//       return res.status(400).json({ message: "Invalid product ID" });
+//     }
+
+//     const cart = await Cart.findOne({ userId: req.user._id });
+//     if (!cart) return res.status(404).json({ message: "Cart not found" });
+
+//     // Filter the items by both productId and size
+//     const itemIndex = cart.items.findIndex(
+//       (item) => item.productId.equals(productId) && item.size === size
+//     );
+
+//     // If the item is found, remove it
+//     if (itemIndex !== -1) {
+//       cart.items.splice(itemIndex, 1);
+//       await cart.save();
+
+//       return res.status(200).json({ message: "Item removed from cart", cart });
+//     } else {
+//       return res.status(404).json({ message: "Item not found in cart" });
+//     }
+//   } catch (error) {
+//     res
+//       .status(500)
+//       .json({ message: "Error removing item from cart", error: error.message });
+//   }
+// };
+
+
 const removeItemFromCart = async (req, res) => {
   try {
-    const { productId, size } = req.body;
+    const { productId } = req.body;
 
     // Validate the productId
     if (!mongoose.Types.ObjectId.isValid(productId)) {
       return res.status(400).json({ message: "Invalid product ID" });
     }
 
+    // Find the user's cart
     const cart = await Cart.findOne({ userId: req.user._id });
     if (!cart) return res.status(404).json({ message: "Cart not found" });
 
-    // Filter the items by both productId and size
-    const itemIndex = cart.items.findIndex(
-      (item) => item.productId.equals(productId) && item.size === size
+    // Find item index based only on productId
+    const itemIndex = cart.items.findIndex((item) =>
+      item.productId.equals(productId)
     );
 
-    // If the item is found, remove it
+    // If the item exists, remove it
     if (itemIndex !== -1) {
       cart.items.splice(itemIndex, 1);
       await cart.save();

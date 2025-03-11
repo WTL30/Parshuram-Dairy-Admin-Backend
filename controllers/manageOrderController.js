@@ -1,24 +1,48 @@
 const Order = require("../models/Order");
 
+// const veiwOrders = async (req, res) => {
+//     try {
+//         const Orders = await Order.find()
+//             .populate("items.productId") // Populate the productId inside the items array
+//             .populate("userId"); // Optionally populate user details
+
+//         if (!Orders) {
+//             res.status(400).json({ message: "No Orders Found " })
+//         }
+//         res.status(200).json({
+//             success: true,
+//             message: "Orders fetched successfully",
+//             data: Orders, // Sending the populated orders in response
+//         });
+
+//     } catch (error) {
+//         res.status(400).json({ error: error.msg, message: "Error occur" })
+//     }
+// }
+
 const veiwOrders = async (req, res) => {
-    try {
-        const Orders = await Order.find()
-            .populate("items.productId") // Populate the productId inside the items array
-            .populate("userId"); // Optionally populate user details
+  try {
+      const orders = await Order.find()
+          .populate("items.productId") // ✅ Fetch product details
+          .populate("userId") // ✅ Fetch user details
+          .exec();
 
-        if (!Orders) {
-            res.status(400).json({ message: "No Orders Found " })
-        }
-        res.status(200).json({
-            success: true,
-            message: "Orders fetched successfully",
-            data: Orders, // Sending the populated orders in response
-        });
+      if (!orders.length) {
+          return res.status(404).json({ success: false, message: "No Orders Found" });
+      }
 
-    } catch (error) {
-        res.status(400).json({ error: error.msg, message: "Error occur" })
-    }
-}
+      res.status(200).json({
+          success: true,
+          message: "Orders fetched successfully",
+          data: orders,
+      });
+
+  } catch (error) {
+      console.error("Error fetching orders:", error);
+      res.status(500).json({ success: false, message: "Server Error", error: error.message });
+  }
+};
+
 
 const updateOrders = async (req, res) => {
     try {
